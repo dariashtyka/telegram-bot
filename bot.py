@@ -7,7 +7,7 @@ from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, fil
 NAME, CONTACT, COMMENT = range(3)
 
 # Стадії для тесту
-Q1, Q2 = range(2)
+Q1, Q2, Q3 = range(3)
 
 TOKEN = os.getenv("TOKEN")
 
@@ -16,7 +16,9 @@ TOKEN = os.getenv("TOKEN")
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
-        "Привіт! Напиши /test щоб пройти тест або /apply щоб подати заявку."
+        "🙌 Привіт! Я бот мислиця!\n\n" \
+        "Змінімо цей світ на краще, розвиваючи критичне мислення. " \
+        "\n\n🌸 Напиши /test, щоб пройти тест та спробувати себе у аналізі інформації.\n\n🌸 Напиши /apply, щоб подати заявку."
     )
 
 # --- Обробка заявки ---
@@ -56,20 +58,25 @@ async def apply_cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # --- Обробка тесту ---
 async def test_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Питання 1: Який зараз рік?")
+    await update.message.reply_text("Питання 1: Чи можна вважати всі повідомлення у ЗМІ об'єктивними та достовірними?\n– Ні.\n– Так.")
     return Q1
 
 async def test_q1(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data['q1'] = update.message.text
-    await update.message.reply_text("Питання 2: Який колір неба?")
+    await update.message.reply_text("Питання 2: Чи потрібно перевіряти інформацію з кількох джерел, щоб скласти повну картину?\n– Ні.\n– Так.")
     return Q2
 
 async def test_q2(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data['q2'] = update.message.text
+    await update.message.reply_text("Питання 3: Чи потрібно враховувати протилежні точки зору при аналізі інформації?\n– Ні.\n– Так.")
+    return Q3
+
+async def test_q3(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    context.user_data['q3'] = update.message.text
 
     # Тут можна зробити перевірку відповідей, а поки просто підсумок:
     await update.message.reply_text(
-        f"Дякую за відповіді! Ти відповів:\n1) {context.user_data['q1']}\n2) {context.user_data['q2']}"
+        f"Дякую за відповіді! Ти відповів:\n1) {context.user_data['q1']}\n ⚪️ Правильна відповідь: Ні❌\n2) {context.user_data['q2']} \n ⚪️ Правильна відповідь: Так✅\n3) {context.user_data['q2']}\n ⚪️ Правильна відповідь: Так✅"
     )
     return ConversationHandler.END
 
@@ -97,6 +104,7 @@ if __name__ == '__main__':
         states={
             Q1: [MessageHandler(filters.TEXT & ~filters.COMMAND, test_q1)],
             Q2: [MessageHandler(filters.TEXT & ~filters.COMMAND, test_q2)],
+            Q3: [MessageHandler(filters.TEXT & ~filters.COMMAND, test_q3)],
         },
         fallbacks=[CommandHandler('cancel', test_cancel)]
     )
