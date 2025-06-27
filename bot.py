@@ -1,8 +1,8 @@
 import csv
 import os
 import gspread
-from telegram import Update
-from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes, ConversationHandler
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes, ConversationHandler, CallbackQueryHandler
 from google.oauth2.service_account import Credentials
 
 # Вкажи обсяг доступу
@@ -78,25 +78,61 @@ async def apply_cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # --- Обробка тесту ---
 async def test_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Питання 1: Чи можна вважати всі повідомлення у ЗМІ об'єктивними та достовірними?\n– Ні.\n– Так.")
+    keyboard = [
+        [InlineKeyboardButton("Ні", callback_data="q1_Ni"), InlineKeyboardButton("Так", callback_data="q1_Tak")]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    await update.message.reply_text(
+        "Питання 1: Чи можна вважати всі повідомлення у ЗМІ об'єктивними та достовірними?",
+        reply_markup=reply_markup
+    )
     return Q1
 
 async def test_q1(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    context.user_data['q1'] = update.message.text
-    await update.message.reply_text("Питання 2: Чи потрібно перевіряти інформацію з кількох джерел, щоб скласти повну картину?\n– Ні.\n– Так.")
+    query = update.callback_query
+    await query.answer()
+    context.user_data['q1'] = query.data.split('_')[1]  # Отримаємо "Tak" чи "Ni"
+
+    keyboard = [
+        [InlineKeyboardButton("Ні", callback_data="q2_Ni"), InlineKeyboardButton("Так", callback_data="q2_Tak")]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    await query.edit_message_text(
+        "Питання 2: Чи потрібно перевіряти інформацію з кількох джерел, щоб скласти повну картину?",
+        reply_markup=reply_markup
+    )
     return Q2
 
 async def test_q2(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    context.user_data['q2'] = update.message.text
-    await update.message.reply_text("Питання 3: Чи потрібно враховувати протилежні точки зору при аналізі інформації?\n– Ні.\n– Так.")
+    query = update.callback_query
+    await query.answer()
+    context.user_data['q2'] = query.data.split('_')[1]
+
+    keyboard = [
+        [InlineKeyboardButton("Ні", callback_data="q3_Ni"), InlineKeyboardButton("Так", callback_data="q3_Tak")]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    await query.edit_message_text(
+        "Питання 3: Чи потрібно враховувати протилежні точки зору при аналізі інформації?",
+        reply_markup=reply_markup
+    )
     return Q3
 
 async def test_q3(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    context.user_data['q3'] = update.message.text
+    query = update.callback_query
+    await query.answer()
+    context.user_data['q3'] = query.data.split('_')[1]
 
-    # Тут можна зробити перевірку відповідей, а поки просто підсумок:
-    await update.message.reply_text(
-        f"Дякую за відповіді! Ти відповів:\n1) {context.user_data['q1']}\n ⚪️ Правильна відповідь: Ні❌\n2) {context.user_data['q2']} \n ⚪️ Правильна відповідь: Так✅\n3) {context.user_data['q2']}\n ⚪️ Правильна відповідь: Так✅"
+    # Перевірка відповідей (приклад)
+    correct_answers = {'q1': 'Ni', 'q2': 'Tak', 'q3': 'Tak'}
+    results = []
+    for q in ['q1', 'q2', 'q3']:
+        user_answer = context.user_data.get(q)
+        correct = "✅" if user_answer == correct_answers[q] else "❌"
+        results.append(f"{q.upper()}: {user_answer} {correct}")
+
+    await query.edit_message_text(
+        "Дякую за відповіді!\n" + "\n".join(results)
     )
     return ConversationHandler.END
 
@@ -122,9 +158,9 @@ if __name__ == '__main__':
     test_conv = ConversationHandler(
         entry_points=[CommandHandler('test', test_start)],
         states={
-            Q1: [MessageHandler(filters.TEXT & ~filters.COMMAND, test_q1)],
-            Q2: [MessageHandler(filters.TEXT & ~filters.COMMAND, test_q2)],
-            Q3: [MessageHandler(filters.TEXT & ~filters.COMMAND, test_q3)],
+            Q1: [CallbackQueryHandler(test_q1, pattern='^q1_')],
+            Q2: [CallbackQueryHandler(test_q2, pattern='^q2_')],
+            Q3: [CallbackQueryHandler(test_q3, pattern='^q3_')],
         },
         fallbacks=[CommandHandler('cancel', test_cancel)]
     )
