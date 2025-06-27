@@ -97,7 +97,7 @@ async def test_q1(update: Update, context: ContextTypes.DEFAULT_TYPE):
         [InlineKeyboardButton("Ні", callback_data="q2_Ni"), InlineKeyboardButton("Так", callback_data="q2_Tak")]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    await query.edit_message_text(
+    await query.message.reply_text(
         "Питання 2: Чи потрібно перевіряти інформацію з кількох джерел, щоб скласти повну картину?",
         reply_markup=reply_markup
     )
@@ -112,7 +112,7 @@ async def test_q2(update: Update, context: ContextTypes.DEFAULT_TYPE):
         [InlineKeyboardButton("Ні", callback_data="q3_Ni"), InlineKeyboardButton("Так", callback_data="q3_Tak")]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    await query.edit_message_text(
+    await query.message.reply_text(
         "Питання 3: Чи потрібно враховувати протилежні точки зору при аналізі інформації?",
         reply_markup=reply_markup
     )
@@ -131,7 +131,7 @@ async def test_q3(update: Update, context: ContextTypes.DEFAULT_TYPE):
         correct = "✅" if user_answer == correct_answers[q] else "❌"
         results.append(f"{q.upper()}: {user_answer} {correct}")
 
-    await query.edit_message_text(
+    await query.message.reply_text(
         "Дякую за відповіді!\n" + "\n".join(results)
     )
     return ConversationHandler.END
