@@ -1,9 +1,22 @@
 import csv
 import os
+import gspread
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes, ConversationHandler
+from google.oauth2.service_account import Credentials
 
-# Стадії для заявки
+# Вкажи обсяг доступу
+SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
+
+# Путь до JSON-файлу з ключем
+creds = Credentials.from_service_account_file("creds.json", scopes=SCOPES)
+
+# Авторизація через gspread
+gc = gspread.authorize(creds)
+
+# Відкриття таблиці за назвою
+sheet = gc.open_by_key("1EQq7u8BaqboIdgS7E5c0vj0fLQLO-UtbPpdESF9ojyY").sheet1
+
 NAME, CONTACT, COMMENT = range(3)
 
 # Стадії для тесту
@@ -40,14 +53,21 @@ async def apply_comment(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data['comment'] = update.message.text
 
     # Записуємо у CSV файл
-    with open("zayavky.csv", "a", newline="", encoding="utf-8") as f:
-        writer = csv.writer(f)
-        writer.writerow([
-            update.effective_user.id,
-            context.user_data['name'],
-            context.user_data['contact'],
-            context.user_data['comment']
-        ])
+    # with open("zayavky.csv", "a", newline="", encoding="utf-8") as f:
+    #     writer = csv.writer(f)
+    #     writer.writerow([
+    #         update.effective_user.id,
+    #         context.user_data['name'],
+    #         context.user_data['contact'],
+    #         context.user_data['comment']
+    #     ])
+    # Записуємо у Google таблицю
+    sheet.append_row([
+        str(update.effective_user.id),
+        context.user_data['name'],
+        context.user_data['contact'],
+        context.user_data['comment']
+    ])
 
     await update.message.reply_text("Дякуємо! Заявку прийнято ✅")
     return ConversationHandler.END
