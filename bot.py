@@ -4,6 +4,14 @@ import gspread
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes, ConversationHandler, CallbackQueryHandler
 from google.oauth2.service_account import Credentials
+import json
+
+# Отримаємо JSON з env
+creds_json = os.getenv("GOOGLE_CREDS_JSON")
+
+# Створимо тимчасовий файл
+with open("creds.json", "w") as f:
+    f.write(creds_json)
 
 # Вкажи обсяг доступу
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
