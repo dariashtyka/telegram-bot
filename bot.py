@@ -1,6 +1,6 @@
 import csv
 import os
-import gspread
+import sqlite3
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes, ConversationHandler, CallbackQueryHandler
 from google.oauth2.service_account import Credentials
@@ -29,6 +29,7 @@ NAME, CONTACT, COMMENT = range(3)
 
 # Стадії для тесту
 Q1, Q2, Q3 = range(3)
+T1_Q1, T1_Q2, T1_Q3, T1_Q4, T1_Q5 = range (5)
 
 TOKEN = os.getenv("TOKEN")
 
@@ -39,7 +40,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         "🙌 Привіт! Я бот мислиця!\n\n" \
         "Змінімо цей світ на краще, розвиваючи критичне мислення.\n\n" \
-        "💙 Напиши /test, щоб пройти тест та спробувати себе у аналізі інформації.\n\n" \
+        "💙 Напиши /critical, щоб пройти тест на критичне мислення.\n\n" \
         "💙 Напиши /apply, щоб подати заявку."
     )
 
@@ -149,6 +150,117 @@ async def test_cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Тест скасовано.")
     return ConversationHandler.END
 
+# --- Обробка тесту 1 ---
+async def critical_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    keyboard = [
+        [InlineKeyboardButton("Фейк", callback_data="q1_Ni"), InlineKeyboardButton("Правда", callback_data="q1_Tak")]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    await update.message.reply_text(
+        "🔵 Визнач: «Наступний факт є фейком чи правдою?»",
+    )
+    await update.message.reply_text(
+        "1. Критичне мислення допомагає розрізняти факти і припущення.",
+        reply_markup=reply_markup
+    )
+    return T1_Q1
+
+async def critical_q2(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+    context.user_data['q1'] = query.data.split('_')[1]  # Отримаємо "Tak" чи "Ni"
+
+    keyboard = [
+        [InlineKeyboardButton("Фейк", callback_data="q2_Ni"), InlineKeyboardButton("Правда", callback_data="q2_Tak")]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    await query.message.reply_text(
+        "2. Критичне мислення — це постійна недовіра до всіх і всього.",
+        reply_markup=reply_markup
+    )
+    return T1_Q2
+
+async def critical_q3(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+    context.user_data['q2'] = query.data.split('_')[1]
+
+    keyboard = [
+        [InlineKeyboardButton("Фейк", callback_data="q3_Ni"), InlineKeyboardButton("Правда", callback_data="q3_Tak")]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    await query.message.reply_text(
+        "3. Людина з критичним мисленням ніколи не погоджується з думкою інших.",
+        reply_markup=reply_markup
+    )
+    return T1_Q3
+
+async def critical_q4(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+    context.user_data['q3'] = query.data.split('_')[1]
+
+    keyboard = [
+        [InlineKeyboardButton("Фейк", callback_data="q4_Ni"), InlineKeyboardButton("Правда", callback_data="q4_Tak")]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    await query.message.reply_text(
+        "4. Критичне мислення — це навичка, яку можна тренувати і вдосконалювати.",
+        reply_markup=reply_markup
+    )
+    return T1_Q4
+
+async def critical_q5(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+    context.user_data['q4'] = query.data.split('_')[1]
+
+    keyboard = [
+        [InlineKeyboardButton("Фейк", callback_data="q5_Ni"), InlineKeyboardButton("Правда", callback_data="q5_Tak")]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    await query.message.reply_text(
+        "5. Критичне мислення полягає лише в тому, щоб знати більше фактів..",
+        reply_markup=reply_markup
+    )
+    return T1_Q5
+
+async def critical_end(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query=update.callback_query
+    await query.answer()
+    context.user_data['q5']=query.data.split('_')[1]
+
+    correct_answers={
+        'q1':'Tak',
+        'q2':'Ni',
+        'q3':'Ni',
+        'q4':'Tak',
+        'q5':'Ni'
+    }
+
+    correct_answer_print={
+        'Tak':'Правда',
+        'Ni':'Фейк'
+    }
+    l=len(context.user_data)
+    result=[]
+    score=0
+    for q in [f'q{i}'for i in range(1,l+1) ]:
+        u_ans=context.user_data[q]
+        c_ans=correct_answers[q]
+        if u_ans==c_ans:
+            correct="✅"
+            score+=1
+        else:
+            correct="❌"
+        result.append(q.upper()+":"+correct+"\n"+
+                      f'🔹 Твоя відповідь: {correct_answer_print[u_ans]}\n'+
+                      f'▫️ Правильна відповідь: {correct_answer_print[c_ans]}\n')
+    await query.message.reply_text(
+        "Дякую за відповіді!\n"+f'Ось твої результати: {score}/{l}\n\n'+'\n'.join(result)
+    )
+    return ConversationHandler.END
+
 if __name__ == '__main__':
     app = ApplicationBuilder().token(TOKEN).build()
 
@@ -173,10 +285,22 @@ if __name__ == '__main__':
         },
         fallbacks=[CommandHandler('cancel', test_cancel)]
     )
-
+        # Конверсаційний хендлер для тесту
+    critical_conv = ConversationHandler(
+        entry_points=[CommandHandler('critical', critical_start)],
+        states={
+            T1_Q1: [CallbackQueryHandler(critical_q2, pattern='^q1_')],
+            T1_Q2: [CallbackQueryHandler(critical_q3, pattern='^q2_')],
+            T1_Q3: [CallbackQueryHandler(critical_q4, pattern='^q3_')],
+            T1_Q4: [CallbackQueryHandler(critical_q5, pattern='^q4_')],
+            T1_Q5: [CallbackQueryHandler(critical_end, pattern='^q5_')],
+        },
+        fallbacks=[CommandHandler('cancel', test_cancel)]
+    )
     app.add_handler(CommandHandler("start", start))
     app.add_handler(apply_conv)
     app.add_handler(test_conv)
+    app.add_handler(critical_conv)
 
     print("Бот запущено")
     app.run_polling()
