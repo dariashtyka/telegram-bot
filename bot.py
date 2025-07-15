@@ -1,6 +1,7 @@
 import csv
 import os
 import sqlite3
+import gspread
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes, ConversationHandler, CallbackQueryHandler
 from google.oauth2.service_account import Credentials
