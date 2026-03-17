@@ -150,7 +150,7 @@ sheet.append_row([...])
 
 ---
 
-## 💬 Bot Commands
+## Bot Commands
 
 | Command     | Description                   |
 | ----------- | ----------------------------- |
